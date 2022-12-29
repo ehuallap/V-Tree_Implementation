@@ -745,7 +745,7 @@ struct G_Tree{
     // Construir árbol, x actual, número de subgráfos f, subgráfo actual g
 	void build(int x=1,int f=1,const Graph &g=G)
 	{
-		if(x==1)//x root 
+		if(x==1)//x es raiz 
 		{
 			node.tree=this;
 			node.size=G.n*2+2;
@@ -760,7 +760,7 @@ struct G_Tree{
 			node[1].G=g;
 			node.node_size=node.size;
 		}
-		else//x not root
+		else//x no es raiz
 		{
 			node[x].deep=node[node[x].father].deep+1;
 		}
@@ -770,7 +770,7 @@ struct G_Tree{
 		if(node[x].n>50)printf("x=%d deep=%d n=%d ",x,node[x].deep,node[x].G.n);
 		if(node[x].n>f)
 		{
-			//id of sub node
+			//id del subnodo
 			int top=node.tot;
 			for(int i=0;i<node[x].part;i++)
 			{
@@ -778,7 +778,7 @@ struct G_Tree{
 				node[top+i].father=x;
 			}
 			node.tot+=node[x].part;
-			//add border between two graph
+			//añadir borde entre dos grafos
 			Graph **graph;
 			graph=new Graph*[node[x].part];
 			for(int i=0;i<node[x].part;i++)graph[i]=&node[node[x].son[i]].G;
@@ -786,7 +786,7 @@ struct G_Tree{
 			delete [] graph;
 			make_border(x,node[x].color);
 			if(node[x].n>50)printf("border=%d\n",node[x].borders.size());
-			//give the value of border to subgraph 
+			//dar el valor de borde al subgrafo 
 			map<int,pair<int,int> >::iterator iter;
 			for(iter=node[x].borders.begin();iter!=node[x].borders.end();iter++)
 			{
@@ -804,7 +804,7 @@ struct G_Tree{
 				}
 				tot[node[x].color[i]]++;
 			}
-			//iterate subnode
+			//iterar subnode
 			for(int i=0;i<node[x].part;i++)
 				build(node[x].son[i]);
 		}
@@ -812,7 +812,7 @@ struct G_Tree{
 		node[x].dist.init(node[x].borders.size());
 		node[x].order.init(node[x].borders.size());
 		node[x].order.cover(-INF);
-		if(x==1)//construct dist by root of x
+		if(x==1)//construir dist por raíz de x
 		{
 			for(int i=1;i<min(1000,node.tot-1);i++)
 				if(node[i].n>50)
@@ -825,7 +825,7 @@ struct G_Tree{
 			build_dist1(root);
 			printf("begin_build_dist2\n");
 			build_dist2(root);
-			//calculate the leaf node id of vertex in 
+			//calcular el id del nodo hoja del vértice en 
 			id_in_node.clear();
 			for(int i=0;i<node[root].G.n;i++)id_in_node.push_back(-1);
 			for(int i=1;i<node.tot;i++)
@@ -845,30 +845,30 @@ struct G_Tree{
     // de abajo hacia arriba fusionar dist en Graph
     void build_dist1(int x=1)
 	{
-		// Calculate dist in subgraph and set to x
+		// Calcular dist en subgrafo y poner a x
 		for(int i=0;i<node[x].part;i++)if(node[x].son[i])build_dist1(node[x].son[i]);
 		if(node[x].son[0])//not leaf
 		{
-			//construct the edge between x subnode
+			//construir la arista entre x subnodo
 			node[x].make_border_edge();
-			// construct the real dist inside
+			// construir la dist real en el interior
 			node[x].dist.floyd(node[x].order);
 		}
-		else ;//leaf
-		// give the inside weight to father
+		else ;//hoja
+		// dar el peso interior al padre
 		if(node[x].father)
 		{
 			int y=node[x].father,i,j;
 			map<int,pair<int,int> >::iterator x_iter1,y_iter1;
 			vector<int>id_in_fa(node[x].borders.size());
-			//calculate the id of border in father border,  no exist:-1
+			//calcular el id de borde en padre borde, no existe:-1
 			for(x_iter1=node[x].borders.begin();x_iter1!=node[x].borders.end();x_iter1++)
 			{
 				y_iter1=node[y].borders.find(x_iter1->first);
 				if(y_iter1==node[y].borders.end())id_in_fa[x_iter1->second.first]=-1;
 				else id_in_fa[x_iter1->second.first]=y_iter1->second.first;
 			}
-			//tell the all connection weight to father
+			//dice el peso de todas las conexiones al padre
 			for(i=0;i<(int)node[x].borders.size();i++)
 				for(j=0;j<(int)node[x].borders.size();j++)
 					if(id_in_fa[i]!=-1&&id_in_fa[j]!=-1)
@@ -890,7 +890,7 @@ struct G_Tree{
 		if(x!=root)node[x].dist.floyd(node[x].order);
 		if(node[x].son[0])
 		{
-			//calculate the border id in subgraph of current border 
+			//calcular el id del borde en el subgrafo del borde actual 
 			vector<int>id_(node[x].borders.size());
 			vector<int>color_(node[x].borders.size());
 			map<int,pair<int,int> >::iterator iter1,iter2;
@@ -901,7 +901,7 @@ struct G_Tree{
 				int y=node[x].son[c];
 				id_[iter1->second.first]=node[y].borders[iter1->first].first;
 			}
-			//Recalculate the subgraph weight 
+			//Recalcular el peso del subgrafo 
 			for(int i=0;i<(int)node[x].borders.size();i++)
 				for(int j=0;j<(int)node[x].borders.size();j++)
 					if(color_[i]==color_[j])
@@ -914,7 +914,7 @@ struct G_Tree{
 							node[y].order[id_[i]][id_[j]]=-2;
 						}
 					}
-			// Recursive sub nodes 
+			// Subnodos recursivos 
 			for(int i=0;i<node[x].part;i++)
 				if(node[x].son[i])build_dist2(node[x].son[i]);
 		}
@@ -924,7 +924,7 @@ struct G_Tree{
     void build_border_in_father_son()
 	{
 		int i,j,x,y;
-		//Construct cache
+		//Construir cache
 		for(x=1;x<node.tot;x++)
 		{
 			//printf("x=%d node.id[x]=%d size=%d\n",x,node.id[x],node.node_size);fflush(stdout);
@@ -1047,7 +1047,8 @@ struct G_Tree{
 					dist2[j_]=dist2[i_]+dist[i_][j_];
 				}
 			}
-		}else{
+		}
+		else{
 			for(int i=0;i<tot0;i++)
 			{
 				int i_=begin[i];
@@ -1169,16 +1170,14 @@ struct G_Tree{
 			else p=y;
 			for(i=j=0;i<(int)node[p].borders.size();i++)
 				if(node[p].border_in_father[i]!=-1)
-					if((t==1)||(t==0&&node[p].cache_dist[i]<bound))
-					{
+					if((t==1)||(t==0&&node[p].cache_dist[i]<bound)){
 						id_LCA[t].push_back(node[p].border_in_father[i]);
 						id_now[t].push_back(i);
 					}
 		}
 		for(int i=0;i<node[y].cache_dist.size();i++)node[y].cache_dist[i]=INF;
 		for(int i=0;i<id_LCA[0].size();i++)
-			for(int j=0;j<id_LCA[1].size();j++)
-			{
+			for(int j=0;j<id_LCA[1].size();j++){
 				int k=node[x].cache_dist[id_now[0][i]]+node[LCA].dist[id_LCA[0][i]][id_LCA[1][j]];
 				if(k<node[y].cache_dist[id_now[1][j]])node[y].cache_dist[id_now[1][j]]=k;
 			}
@@ -1187,17 +1186,14 @@ struct G_Tree{
 		begin=new int[node[y].borders.size()];
 		end=new int[node[y].borders.size()];
 		int tot0=0,tot1=0;
-		for(int i=0;i<node[y].cache_dist.size();i++)
-		{
+		for(int i=0;i<node[y].cache_dist.size();i++){
 			if(node[y].cache_dist[i]<bound)begin[tot0++]=i;
 			else if(node[y].cache_dist[i]==INF)
 				end[tot1++]=i;
 		}
-		for(int i=0;i<tot0;i++)
-		{
+		for(int i=0;i<tot0;i++){
 			int i_=begin[i];
-			for(int j=0;j<tot1;j++)
-			{
+			for(int j=0;j<tot1;j++){
 				if(node[y].cache_dist[end[j]]>node[y].cache_dist[i_]+dist[i_][end[j]])
 				node[y].cache_dist[end[j]]=node[y].cache_dist[i_]+dist[i_][end[j]];
 			}
@@ -1255,7 +1251,7 @@ struct G_Tree{
 		delete [] end;
 	}
 
-    //LCA of x and y
+    //LCA de x y y
     int find_LCA(int x,int y)
 	{
 		if(node[x].deep<node[y].deep)swap(x,y);
@@ -1264,9 +1260,8 @@ struct G_Tree{
 		return x;
 	}
 
-    //Shortest distance from S to T
-	int search(int S,int T)
-	{
+    //La distancia más corta de S a T
+	int search(int S,int T){
 		if(S==T)return 0;
 		//Calculate LCA
 		int i,j,k,p;
@@ -1292,7 +1287,7 @@ struct G_Tree{
 			if(t==0)x=p;
 			else y=p;
 		}
-		vector<int>id[2];//current border id in sequence of LCA border vector 
+		vector<int>id[2];//id de frontera actual en la secuencia del vector de frontera LCA 
 		for(int t=0;t<2;t++)
 		{
 			if(t==0)p=x;
@@ -1306,7 +1301,7 @@ struct G_Tree{
 				}
 			while(dist[t].size()>id[t].size()){dist[t].pop_back();}
 		}
-		//matched
+		//matched - emparejado
 		int MIN=INF;
 		for(i=0;i<dist[0].size();i++)
 		{
