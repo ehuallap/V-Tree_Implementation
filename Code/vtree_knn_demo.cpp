@@ -116,8 +116,7 @@ template<typename A,typename B>void save(ostream &out,const map<A,B> &h)
 		save(out,iter->second);
 	}
 }
-template<typename T>void read(istream& in,T &a)
-{
+template<typename T>void read(istream& in,T &a){
 	in.read((char*)&a,sizeof(a));
 }
 template<typename T>void read(istream& in,vector<T> &a)
