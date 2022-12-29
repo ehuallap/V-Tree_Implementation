@@ -1,3 +1,4 @@
+This is a forked project from the original, credits to the author.
 # V-Tree: Efficient kNN Search on Moving Objects with Road-Network Constraints
 
 This project consists of implement of V-Tree, which designed to support kNN search on moving objects with road-network constraints. 
