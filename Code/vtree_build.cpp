@@ -562,24 +562,28 @@ struct Node{
 	}
 };
 
-
+// *********************************************
+// ESTRUCTURA G_Tree
+// *********************************************
 struct G_Tree{
 	int root;
-	vector<int>id_in_node;			//which node the vertex belongs to
-	vector<vector<int> >car_in_node;//Record the vehicles in the vertex.
-    vector<int>car_offset; 			//The offset of the vehicle in the vertex.
+	vector<int>id_in_node;			//a que nodo pertenece el vértice
+	vector<vector<int> >car_in_node;//Registra los vehículos en el vértice.
+    vector<int>car_offset; 			//El desplazamiento del vehículo en el vértice.
 
 	struct Interface{
-		G_Tree *tree;//point to the G_Tree(var)
-		int tot,size,id_tot;//tot: up bound of vir subscript, size:size of vector,id_tot up bound of memory 
-		int node_size;//size of vector node
+		G_Tree *tree;               //Puntero al G_Tree(var)
+		int tot,size,id_tot;        //tot: límite superior del subíndice vir, tamaño: tamaño del vector, id_tot límite superior de la memoria
+		int node_size;              //tamaño del nodo vector
 		Node *node;
-		vector<int>id;//id of node in vector id 
-		//sub node information 
-		vector<int>father;//father node of vir node
-		vector<int>border_in_father;//vir node border_in_father
-		vector<int>G_id;//real id of the leaf which n=1 in node[0]
-		void build_node0(int x)//init node[0] with x
+		vector<int>id;              //id del nodo en el vector id
+		//sub node informacion
+		vector<int>father;          //nodo padre del nodo vir
+		vector<int>border_in_father;//nodo vir border_in_father
+		vector<int>G_id;            //real id de la hoja con n=1 in node[0]
+
+        //Incializar node[0] con x
+        void build_node0(int x)
 		{
 			//cnt2++;
 			node[0].borders.clear();
@@ -597,6 +601,7 @@ struct G_Tree{
 			}
 
 		}
+
 		Node& operator[](int x){
 			if(id[x]==0 && Memory_Optimization)
 				build_node0(x);
@@ -709,8 +714,9 @@ struct G_Tree{
 			build_border_in_father_son();
 		}
 	}
-	void add_border(int x,int id,int id2)
-	// add a real id to the boundary set of x, in vir is id2, its corresponding id of border
+
+    // agrega un id real al conjunto de límites de x, en vir es id2, su correspondiente id de borde
+    void add_border(int x,int id,int id2)
 	{
 		map<int,pair<int,int> >::iterator iter;
 		iter=node[x].borders.find(id);
@@ -720,6 +726,8 @@ struct G_Tree{
 			node[x].borders[id]=second;
 		}
 	}
+
+    //calcular el conjunto de x
 	void make_border(int x,const vector<int> &color)//calculate the set of x
 	{
 		for(int i=0;i<node[x].G.n;i++)
@@ -733,7 +741,9 @@ struct G_Tree{
 				}
 		}
 	}
-	void build(int x=1,int f=1,const Graph &g=G)//Build tree，current x,number of subgraphs f,current subgraph g
+
+    // Construir árbol, x actual, número de subgráfos f, subgráfo actual g
+	void build(int x=1,int f=1,const Graph &g=G)
 	{
 		if(x==1)//x root 
 		{
@@ -822,7 +832,7 @@ struct G_Tree{
 				if(node[i].G.n==1)
 					id_in_node[node[i].G.id[0]]=i;
 			{
-				//建立car_in_node;
+				//car_in_node;
 				vector<int>empty_vector;
 				empty_vector.clear();
 				car_in_node.clear();
@@ -831,7 +841,9 @@ struct G_Tree{
 			if(Memory_Optimization)Memory_Compress();
 		}
 	}
-	void build_dist1(int x=1)// from down to top merge dist in Graph
+
+    // de abajo hacia arriba fusionar dist en Graph
+    void build_dist1(int x=1)
 	{
 		// Calculate dist in subgraph and set to x
 		for(int i=0;i<node[x].part;i++)if(node[x].son[i])build_dist1(node[x].son[i]);
@@ -871,7 +883,9 @@ struct G_Tree{
 		}
 		return;
 	}
-	void build_dist2(int x=1)//Calculate from top to down as in paper
+
+    //Calcular de arriba hacia abajo como en paper
+	void build_dist2(int x=1)
 	{
 		if(x!=root)node[x].dist.floyd(node[x].order);
 		if(node[x].son[0])
@@ -905,8 +919,9 @@ struct G_Tree{
 				if(node[x].son[i])build_dist2(node[x].son[i]);
 		}
 	}
-	void build_border_in_father_son()
-	//calculate the id of border in father/son 
+
+    //calcular el id del borde en padre/hijo
+    void build_border_in_father_son()
 	{
 		int i,j,x,y;
 		//Construct cache
@@ -967,7 +982,9 @@ struct G_Tree{
 			}
 		}
 	}
-	void Memory_Compress()//Compress the tree in memory make the node with n=1 visual
+
+    //Comprimir el árbol en memoria hacer el nodo con n=1 visual
+	void Memory_Compress()
 	{
 		printf("Begin Memory Compress! node_size=%d\n",node.node_size);
 		int cnt=0;
@@ -997,9 +1014,10 @@ struct G_Tree{
 		node.node=new_node;
 		printf("End Memory Compress! node_size=%d\n",node.node_size);fflush(stdout);
 	}
+
+    //coloque la distancia más corta de S a x en dist1, luego calcule la distancia de S a x.padre y actualice dist
+    //tipo = 0 está arriba, tipo = 1 está abajo
 	void push_borders_up(int x,vector<int> &dist1,int type)
-	//put the shortest distance from S to x in dist1, then calculate the distance from S to x.father and update dist
-	//type = 0 is up, type = 1 is down 
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1045,8 +1063,9 @@ struct G_Tree{
 		delete [] begin;
 		delete [] end;
 	}
-	void push_borders_up_cache(int x,int bound=INF)
-	//cache S to vertex in x.cache_dist, and calculate the distance from S to x.father, and update x.father.cache
+
+    //cachear S al vértice en x.cache_dist, y calcular la distancia de S a x.father, y actualizar x.father.cache
+    void push_borders_up_cache(int x,int bound=INF)
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1090,8 +1109,9 @@ struct G_Tree{
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
+
+    //calcular la distancia de S al hijo de x, actualizar y.cache por S a los bordes en x.cache_dist
 	void push_borders_down_cache(int x,int y,int bound=INF)
-	//calculate distance from S to the son of x, update y.cache by S to borders in x.cache_dist
 	{
 		if(node[x].cache_vertex_id==node[y].cache_vertex_id&&bound<=node[y].cache_bound)return;
 		node[y].cache_vertex_id=node[x].cache_vertex_id;
@@ -1132,8 +1152,9 @@ struct G_Tree{
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
-	void push_borders_brother_cache(int x,int y,int bound=INF)
-	//from S to vertex x stored in x.cache_dist,calculate the distance from S to brother vertex y and update y.cache
+
+    //desde S hasta el vértice x almacenado en x.cache_dist, calcule la distancia desde S hasta el vértice hermano y y actualice y.cache
+    void push_borders_brother_cache(int x,int y,int bound=INF)
 	{
 		int S=node[x].cache_vertex_id,LCA=node[x].father,i,j;
 		if(node[y].cache_vertex_id==S&&node[y].cache_bound>=bound)return;
@@ -1188,10 +1209,11 @@ struct G_Tree{
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
-	void push_borders_up_path(int x,vector<int> &dist1)
-	//Cache S to border of x in dist1
-	//calculate the distance from s to x.father, update dist1
-	//record x.father to x.father.path_record(>=0 means node, < 0 means where come, -INF non pre)
+
+    // Cache S al borde de x en dist1
+    //calcular la distancia de s a x.padre, actualizar dist1
+    //grabar x.padre a x.padre.path_record(>=0 significa nodo, <0 significa de dónde viene, -INF no pre)
+    void push_borders_up_path(int x,vector<int> &dist1)
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1232,14 +1254,18 @@ struct G_Tree{
 		delete [] begin;
 		delete [] end;
 	}
-	int find_LCA(int x,int y)//LCA of x and y 
+
+    //LCA of x and y
+    int find_LCA(int x,int y)
 	{
 		if(node[x].deep<node[y].deep)swap(x,y);
 		while(node[x].deep>node[y].deep)x=node[x].father;
 		while(x!=y){x=node[x].father;y=node[y].father;}
 		return x;
 	}
-	int search(int S,int T)//Shortest distance from S to T
+
+    //Shortest distance from S to T
+	int search(int S,int T)
 	{
 		if(S==T)return 0;
 		//Calculate LCA
@@ -1293,10 +1319,11 @@ struct G_Tree{
 		}
 		return MIN;
 	}
-	int search_cache(int S,int T,int bound=INF)
-	//Search Shortest distance from S to T, and store them in cache, skip weight >=bound, if no return INF
+
+    //Buscar la distancia más corta de S a T, y almacenarlos en caché, omitir peso> = límite, si no, devolver INF
+    int search_cache(int S,int T,int bound=INF)
 	{
-		//Naive calculate and cache
+		//Calculo ingenuo y cache
 		if(S==T)return 0;
 		//LCA
 		int i,j,k,p;
@@ -1343,7 +1370,9 @@ struct G_Tree{
 		//Final Result
 		return node[id_in_node[T]].cache_dist[0];
 	}
-	void add_car(int node_id,int car_id)//add a car_id car which belongs to  node_id to car set.
+
+    //* Agregar un auto car_id que pertenezca a node_id al conjunto de autos.
+	void add_car(int node_id,int car_id)
 	{
 		car_in_node[node_id].push_back(car_id);
 		if(car_in_node[node_id].size()==1)
@@ -1354,7 +1383,9 @@ struct G_Tree{
 			for(int p=S;push_borders_up_add_min_car_dist(p,node_id);p=node[p].father);  //add it to some node
 		}
 	}
-	void del_car(int node_id,int car_id)//remove a car_id car which belongs to node_id from car set
+
+    //* Eliminar un coche car_id que pertenece a node_id del conjunto de coches
+    void del_car(int node_id,int car_id)
 	{
 		int i;
 		for(i=0;i<car_in_node[node_id].size();i++)
@@ -1377,22 +1408,29 @@ struct G_Tree{
 		}
         //
 	}
-	void change_car_offset(int car_id,int dist)// update the offset of car_id to the vertex
+
+	//* Actualizar el desplazamiento de car_id al vértice
+    void change_car_offset(int car_id,int dist)
 	{
 		while(car_offset.size()<=car_id)car_offset.push_back(0);
 		car_offset[car_id]=dist;
 	}
-	int get_car_offset(int car_id)//get the offset of car_id 
+
+    //* Obtener el desplazamiento de car_id
+	int get_car_offset(int car_id)
 	{
 		while(car_offset.size()<=car_id)car_offset.push_back(0);
 		return car_offset[car_id];
 	}
 
-	int begin[10000],end[10000];//push_borders_up_add/del_min_car_dist vector of calculated vertex and un-calculated
+	//push_borders_up_add/del_min_car_dist vector de vértice calculado y no calculado
+    int begin[10000],end[10000];
     int buffer[10000];
+
+
+    //* actualizar x.father por min_car_dist en x, actualice donde node_id=start_id, si no existe, devuelve falso, o verdadero.
     bool push_borders_up_add_min_car_dist(int x,int start_id)
-    //update x.father by min_car_dist in x, update which node_id=start_id, if no exist return false, of return true.
-	{                                                     
+	{
 		// leaf node and the position of the car
 		int re=false;
 		if(node[x].father==0)return re;
@@ -1440,7 +1478,9 @@ struct G_Tree{
 		}
 		return re;
 	}
-	bool push_borders_up_del_min_car_dist(int x,int start_id)//del  min_car_dist which node_id=start_id from, then update. no exist return false, otherwise return true 
+
+    //* del min_car_dist desde el cual node_id=start_id, luego actualice. no existe devuelve falso, de lo contrario devuelve verdadero
+    bool push_borders_up_del_min_car_dist(int x,int start_id)
 	{
 		if(node[x].father==0)return false; //till top 
 		bool re=false;
@@ -1531,8 +1571,9 @@ struct G_Tree{
 		}
 		return re;
 	}
-	int push_borders_up_cache_KNN_min_dist_car(int x)
-	//calculate S to x.father and cache
+
+    //Calcular S a x.padre y caché
+    int push_borders_up_cache_KNN_min_dist_car(int x)
     {
       //DP
       if (node[x].father == 0) return INF;
@@ -1578,7 +1619,8 @@ struct G_Tree{
       return re;
     }
 
-	vector<int> KNN_min_dist_car(int S,int K)//Most import one, calculate the KNN of S, return the set of result
+    //La mayoría importa uno, calcula el KNN de S, devuelve el conjunto de resultados
+	vector<int> KNN_min_dist_car(int S,int K)
 	{
 		//optimization as in paper, only need to calculate some layer, only K is farther than current or non car in current layer.
 		int Now_Cache_Node_Number=id_in_node[S],Now_Cache_Dist=0;
@@ -1696,10 +1738,12 @@ struct G_Tree{
 	}
 }tree;
 
+// Inciaizar usando una semilla
 void init(){
 	srand(747929791);
 }
 
+// Leer archivo con los datos de vertices , aristas y pesos
 void read()
 {
 	printf("begin read\n");
@@ -1728,6 +1772,8 @@ void read()
 	cout<<"correct4"<<endl;
 	fclose(in);
 }
+
+// Guardar en un archivo tras la construccion
 void save(string file_name)
 {
 	printf("begin save\n");
@@ -1737,6 +1783,8 @@ void save(string file_name)
 	out.close();
 	printf("save_over\n");
 }
+
+// Guardar en un archivo binario
 void save_binary(string file_name)
 {
 	printf("begin save_binary\n");
@@ -1746,12 +1794,16 @@ void save_binary(string file_name)
 	out.close();
 	printf("save_binary_over\n");
 }
+
+// Carga de archivo normal
 void load(string file_name)
 {
 	ifstream in(file_name.c_str());
 	in>>G.n;
 	in>>tree;
 }
+
+// Carga de archivo binario
 void load_binary(string file_name)
 {
 	printf("begin load_binary\n");
@@ -1763,7 +1815,8 @@ void load_binary(string file_name)
 	printf("load_binary_over\n");
 }
 
-bool arg_has_str(char ar[], string query_str) { //some special data NW,US from 0
+//* Algunos datos especiales NW,US desde 0
+bool arg_has_str(char ar[], string query_str) {
     string strtemp = string(ar);
     if (strtemp.find(query_str) == std::string::npos) {
         return false;
@@ -1771,6 +1824,7 @@ bool arg_has_str(char ar[], string query_str) { //some special data NW,US from 0
     return true;
 }
 
+// Funcion para testear consulta knn
 void knn_test(double car_percent, double change_percent, int query_number, int K, int query_time) {
             vector<int> ans;
             vector<int> addr;
@@ -1851,22 +1905,27 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
             //TIME_TICK_PRINT("Mutiple Time knn",query_time);
 }
 
+
+// *********************************************
+// * MAIN
+// *********************************************
 int main(int argc, char *argv[])
 {
     if (argc < 3 ) {
         printf("Build VTree and save use './vtree_gen_index  input_edge_file output_file'\n");
         return 0;
     }
-    Edge_File; //The first line of the input file shows the number of vertices and edges.
-				 //The first row is the origin, the second row is destination, the third row is the weight of the edge.
+    Edge_File;
+    //La primera línea del archivo de entrada muestra el número de vértices y aristas.
+    //La primera entrada es el origen, la segunda entrada es el destino, la tercera entrada es el peso de la arista
     int K;
     int car_per;
     int change_per;
         Edge_File= argv[1];
-	    init();
-    	read();
-    	tree.build();
-        save_binary(argv[2]); //save index tree
+	    init();                         // Inicializar
+    	read();                         // Leer archivo
+    	tree.build();                   // Construccion del árbol
+        save_binary(argv[2]);  // Guardar el árbol de índices
     	printf("Build and save over!!!!!!!!\n");
 
     	printf("Program End.\n");fflush(stdout);
