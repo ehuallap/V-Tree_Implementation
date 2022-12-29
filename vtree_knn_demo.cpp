@@ -1899,8 +1899,6 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
 
             //TIME_TICK_PRINT("Mutiple Time knn",query_time);
 }
-
-
 // *********************************************
 // * MAIN
 // *********************************************
