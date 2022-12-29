@@ -10,23 +10,23 @@
 #include<cmath>
 #include<queue>
 #include<sys/time.h>
-#include<metis.h>
+#include<metis.h> // Conjunto de programas en serie para particionar gráficos, particionar mallas de elementos finitos y producir órdenes de reducción de relleno para matrices dispersas.
 
 using namespace std;
 const bool DEBUG_=false;
 const char *Edge_File;
-const int Partition_Part=4;//fanout of the vtree
-const int Naive_Split_Limit=33;//number of leaf nodes
-bool Save_Order_Matrix=false;//Whether need to support route Matrix(If  true can have additional usage)
+const int Partition_Part=4; // Fanout del vtree
+const int Naive_Split_Limit=33; // Numero de nodos hoja
+bool Save_Order_Matrix=false; // // Si necesita soporte para la ruta Matrix(Si es true puede tener un uso adicional)
 const int INF=0x3fffffff;
-const bool RevE=false;//Whether need to do some copy, Directed Graph:false，Undirected Graph:true
-const bool Distance_Offset=false;//Whether consider the offset of the vehicle. 
+const bool RevE=false; //Si es necesario hacer alguna copia, grafo dirigido:false，grafo indirecto:true
+const bool Distance_Offset=false; // Si se considera el desplazamiento del vehículo.
 const bool DEBUG1=false;
 bool NWFIX ;
 
-const bool Optimization_KNN_Cut=true;//Optimization for KNN 
-const bool Memory_Optimization=true; //Optimization for memory (Usually on)
-const bool INDEX_Optimization=true;  //Optimization of Index, if need to store more information turn off (usually no need)
+const bool Optimization_KNN_Cut=true; // Optimización para KNN 
+const bool Memory_Optimization=true;  // Optimización de la memoria (normalmente activada)
+const bool INDEX_Optimization=true;   // Optimización del Índice, si necesita almacenar más información desactívelo (normalmente no es necesario)
 
 struct timeval tv;
 long long ts, te;
@@ -35,148 +35,158 @@ void TIME_TICK_END() {gettimeofday( &tv, NULL ); te = tv.tv_sec * 1000000 + tv.t
 void TIME_TICK_PRINT(const char* T,int N=1) {printf("%s RESULT: \t%lld\t (us)\r\n", (T), (te - ts)/N );}
 void TIME_TICK_ALL_PRINT(const char* T,int N=1) {printf("%s RESULT: \t%lld\t (us)\r\n", (T), (te - ts) );}
 
+// ****************************************************************************************
+// ******************************* SOBRECARGAS ********************************************
+// ****************************************************************************************
+
+// Imprimir Vector
 template<typename T>
-ostream& operator<<(ostream &out,const vector<T> &v)
-{
+ostream& operator<<(ostream &out,const vector<T> &v){
 	out<<v.size()<<' ';
-	for(int i=0;i<v.size();i++)
-		out<<v[i]<<' ';
+	for(int i=0;i<v.size();i++) out<<v[i]<<' ';
 	return out;
 }
+
+// Imprimir dato de tipo Pair
 template<typename A,typename B>
-ostream& operator<<(ostream &out,const pair<A,B> &p)
-{
+ostream& operator<<(ostream &out,const pair<A,B> &p){
 	out<<p.first<<' '<<p.second<<' ';
 	return out;
 }
+
+// Ingresar Vector
 template<typename T>
-istream& operator>>(istream &in,vector<T> &v)
-{
+istream& operator>>(istream &in,vector<T> &v){
 	int n;
 	in>>n;
 	v.clear();
-	while(n--)
-	{
+	while(n--){
 		T a;
 		in>>a;
 		v.push_back(a);
 	}
 	return in;
 }
+
+// Ingresar pair
 template<typename A,typename B>
 istream& operator>>(istream &in,pair<A,B> &p)
 {
 	in>>p.first>>p.second;
 	return in;
 }
+
+// Imprimir Map
 template<typename A,typename B>
-ostream& operator<<(ostream &out,const map<A,B> &h)
-{
+ostream& operator<<(ostream &out,const map<A,B> &h){
 	out<<h.size()<<' ';
 	typename map<A,B>::const_iterator iter;
 	for(iter=h.begin();iter!=h.end();iter++)
 		out<<iter->first<<' '<<iter->second<<' ';
 	return out;
 }
+
+// Ingresar Map
 template<typename A,typename B>
-istream& operator>>(istream &in,map<A,B> &h)
-{
+istream& operator>>(istream &in,map<A,B> &h){
 	int n;
 	in>>n;
 	h.clear();
 	A a;B b;
-	while(n--)
-	{
+	while(n--){
 		in>>a>>b;
 		h[a]=b;
 	}
 	return in;
 }
-template<typename T>void save(ostream& out,T a)
-{
+
+// Para guardar una variable
+template<typename T>void save(ostream& out,T a){
 	out.write((char*)&a,sizeof(a));
 }
-template<typename T>void save(ostream& out,vector<T> &a)
-{
+
+// Para guardar un vector
+template<typename T>void save(ostream& out,vector<T> &a){
 	save(out,(int)a.size());
 	for(int i=0;i<a.size();i++)save(out,a[i]);
 }
-template<typename A,typename B>void save(ostream &out,const pair<A,B> &p)
-{
+
+// Para guardar un pair
+template<typename A,typename B>void save(ostream &out,const pair<A,B> &p){
 	save(out,p.first);save(out,p.second);
 }
-template<typename A,typename B>void save(ostream &out,const map<A,B> &h)
-{
 
+// Para guardar un map
+template<typename A,typename B>void save(ostream &out,const map<A,B> &h){
 	save(out,(int)h.size());
 	typename map<A,B>::const_iterator iter;
-	for(iter=h.begin();iter!=h.end();iter++)
-	{
+	for(iter=h.begin();iter!=h.end();iter++){
 		save(out,iter->first);
 		save(out,iter->second);
 	}
 }
+
+// Para leer una variable
 template<typename T>void read(istream& in,T &a){
 	in.read((char*)&a,sizeof(a));
 }
-template<typename T>void read(istream& in,vector<T> &a)
-{
+
+// Para leer un vector
+template<typename T>void read(istream& in,vector<T> &a){
 	int n;
 	read(in,n);
 	a=vector<T>(n);
 	for(int i=0;i<n;i++)read(in,a[i]);
 }
+
+// Para leer un pair
 template<typename A,typename B>void read(istream &in,pair<A,B> &p)
 {
 	read(in,p.first);
 	read(in,p.second);
 }
-template<typename A,typename B>void read(istream &in,map<A,B> &h)
-{
+
+// Para leer un map
+template<typename A,typename B>void read(istream &in,map<A,B> &h){
 	int n;
 	read(in,n);
 	h.clear();
 	A a;B b;
-	while(n--)
-	{
+	while(n--){
 		read(in,a);
 		read(in,b);
 		h[a]=b;
 	}
 }
-struct Graph//Struct of the graph  
-{
-	int n,m;//n vertices and m edges, the number starts from 0 to n-1
+
+// ************************************* GRAFO ***************************************
+struct Graph { // Estructura del grafo
+	int n,m; // n vertices y m aristas, el numero empieza desde 0 a n-1
 	int tot;
-	vector<int>id;//id[i] is the real number of vertex [i]
-	vector<int>head,list,next,cost;//Adjacent Table
+	vector<int>id; // id[i] es el número real del vértice [i]
+	vector<int>head,list,next,cost; // Tabla de adyacencia
 	Graph(){clear();}
 	~Graph(){clear();}
-	friend ostream& operator<<(ostream &out,const Graph &G)//Storage the structure(stdout)
-	{
+	friend ostream& operator<<(ostream &out,const Graph &G){ // Almacenamiento de la estructura(stdout)
 		out<<G.n<<' '<<G.m<<' '<<G.tot<<' '<<G.id<<' '<<G.head<<' '<<G.list<<' '<<G.next<<' '<<G.cost<<' ';
 		return out;
 	}
-	friend istream& operator>>(istream &in,Graph &G)//Read Instruction(stdout)
-	{
+	friend istream& operator>>(istream &in,Graph &G){ // Instrucción de lectura(stdout)
 		in>>G.n>>G.m>>G.tot>>G.id>>G.head>>G.list>>G.next>>G.cost;
 		return in;
 	}
-	void add_D(int a,int b,int c)//add a edge a->b with weight c (directed)
-	{
+	void add_D(int a,int b,int c){ // Añadir una arista a->b con peso c (dirigida)
 		tot++;
 		list[tot]=b;
 		cost[tot]=c;
 		next[tot]=head[a];
 		head[a]=tot;
 	}
-	void add(int a,int b,int c)// add a edge with weight c in undirected graph a<->b
-	{
+	void add(int a,int b,int c){ // Añadir una arista con peso c en el grafo no dirigido a<->b
 		add_D(a,b,c);
 		add_D(b,a,c);
 	}
-	void init(int N,int M,int t=1)
-	{
+	void init(int N,int M,int t=1){ // Inicializar grafo
 		clear();
 		n=N;m=M;
 		tot=t;
@@ -186,8 +196,7 @@ struct Graph//Struct of the graph
 		next=vector<int>(M*2+2);
 		cost=vector<int>(M*2+2);
 	}
-	void clear()
-	{
+	void clear(){ // Limpiar grafo
 		n=m=tot=0;
 		head.clear();
 		list.clear();
@@ -195,30 +204,21 @@ struct Graph//Struct of the graph
 		cost.clear();
 		id.clear();
 	}
-	//Graph Partition
-	vector<int>color;//01 color vector
-	vector<int>con;// Whether is connected 
-	vector<int> Split(Graph *G[],int nparts)//Partition the graph to two parts, and stores to G1, G2,2 METIS algorithm,npart is the number of parts
-	{
-		
+	//Partición de grafo
+	vector<int>color; //01 vector de color
+	vector<int>con; // Si está conectado 
+	vector<int> Split(Graph *G[],int nparts){ //Particiona el grafo en dos partes, y almacena en G1, G2,2 algoritmo METIS,npart es el número de partes
 		vector<int>color(n);
 		int i;
-		/*if(n<Naive_Split_Limit)
-		{
-			return Split_Naive(*G[0],*G[1]);
-		}*/
-
 		if(DEBUG1)printf("Begin-Split\n");
-		if(n==nparts)
-		{
+		if(n==nparts){
 			for(i=0;i<n;i++)color[i]=i;
 		}
-		else
-		{
+		else{
 			idx_t options[METIS_NOPTIONS];
 			memset(options,0,sizeof(options));
 			{
-				METIS_SetDefaultOptions(options);
+				METIS_SetDefaultOptions(options); // Inicializa el array de opciones en sus valores por defecto.
 				options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY; // _RB
 				options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT; // _VOL
 				options[METIS_OPTION_CTYPE] = METIS_CTYPE_SHEM; // _RM
@@ -236,13 +236,12 @@ struct Graph//Struct of the graph
 			}
 			idx_t nvtxs=n;
 			idx_t ncon=1;
-			//transform
+			// Transformar
 			int *xadj = new idx_t[n + 1];
 			int *adj=new idx_t[n+1];
 			int *adjncy = new idx_t[tot-1];
 			int *adjwgt = new idx_t[tot-1];
 			int *part = new idx_t[n];
-
 
 			int xadj_pos = 1;
 			int xadj_accum = 0;
@@ -252,9 +251,7 @@ struct Graph//Struct of the graph
 			xadj[0] = 0;
 			int i = 0;
 			for (int i=0;i<n;i++){
-
-				for(int j=head[i];j;j=next[j])
-				{
+				for(int j=head[i];j;j=next[j]){
 					int enid = list[j];
 					xadj_accum ++;
 					adjncy[adjncy_pos] = enid;
@@ -264,18 +261,15 @@ struct Graph//Struct of the graph
 				xadj[xadj_pos++] = xadj_accum;
 			}
 
-
-			// adjust nodes number started by 0
-
+			// Ajustamos los nodos empezando en 0
 			// adjwgt -> 1
 			for ( int i = 0; i < adjncy_pos; i++ ){
 				adjwgt[i] = 1;
 			}
-
 			// nparts
 			int objval=0;
 			//METIS
-			METIS_PartGraphKway(
+			METIS_PartGraphKway( // Esta función se utiliza para particionar un grafo en n-partes utilizando el particionamiento k-way multinivel.
 				&nvtxs,
 				&ncon,
 				xadj,
@@ -297,7 +291,7 @@ struct Graph//Struct of the graph
 			delete [] adjwgt;
 			delete [] part;
 		}
-		//Partation 
+		// Partición 
 		int j;
 		vector<int>new_id;
 		vector<int>tot(nparts,0),m(nparts,0);
@@ -323,22 +317,22 @@ struct Graph//Struct of the graph
 		return color;
 	}
 }G;
-struct Matrix//Distance Matrix
-{
+
+struct Matrix{ // Matrix de distancias
 	Matrix():n(0),a(NULL){}
 	~Matrix(){clear();}
-	int n;//n*n Matrix
+	int n;// n*n Matriz
 	int *a;
-	friend ostream& operator<<(ostream &out,const Matrix &M)
-	{
+	// Salida de matrices
+	friend ostream& operator<<(ostream &out,const Matrix &M){
 		out<<M.n<<' ';
 		for(int i=0;i<M.n;i++)
 			for(int j=0;j<M.n;j++)
 				out<<M.a[i*M.n+j]<<' ';
 		return out;
 	}
-	friend istream& operator>>(istream &in,Matrix &M)
-	{
+	// Entrada de Matrices
+	friend istream& operator>>(istream &in,Matrix &M){
 		in>>M.n;
 		M.a=new int[M.n*M.n];
 		for(int i=0;i<M.n;i++)
@@ -346,6 +340,7 @@ struct Matrix//Distance Matrix
 				in>>M.a[i*M.n+j];
 		return in;
 	}
+	// Guardar como binario
 	void save_binary(ostream &out)
 	{
 		save(out,n);
@@ -353,56 +348,54 @@ struct Matrix//Distance Matrix
 			for(int j=0;j<n;j++)
 				save(out,a[i*n+j]);
 	}
-	void read_binary(istream &in)
-	{
+	// Leer como binario
+	void read_binary(istream &in){
 		read(in,n);
 		a=new int[n*n];
 		for(int i=0;i<n;i++)
 			for(int j=0;j<n;j++)
 				read(in,a[i*n+j]);
 	}
-	void cover(int x)
-	{
+	// Llena la matriz con x
+	void cover(int x){
 		for(int i=0;i<n;i++)
 			for(int j=0;j<n;j++)
 				a[i*n+j]=x;
 	}
-	void init(int N)
-	{
+	// Inicializar
+	void init(int N){
 		clear();
 		n=N;
 		a=new int[n*n];
 		for(int i=0;i<n*n;i++)a[i]=INF;
 		for(int i=0;i<n;i++)a[i*n+i]=0;
 	}
-	void clear()
-	{
+	// Eliminar
+	void clear(){
 		delete [] a;
 	}
-	void floyd()//Using floyd to calculate the matrix
-	{
+	// Usando floyd para calcular la matriz
+	void floyd(){ 
 		int i,j,k;
 		for(k=0;k<n;k++)
 			for(i=0;i<n;i++)
 				for(j=0;j<n;j++)
 					if(a[i*n+j]>a[i*n+k]+a[k*n+j])a[i*n+j]=a[i*n+k]+a[k*n+j];
 	}
-	void floyd(Matrix &order)//Calculate the matrix with floyd algorithm, and record result to order(route found)
-	{
+	// Calcular la matriz con el algoritmo floyd, y registrar el resultado en orden(ruta encontrada)
+	void floyd(Matrix &order){ 
 		int i,j,k;
 		for(k=0;k<n;k++)
 			for(i=0;i<n;i++)
 				for(j=0;j<n;j++)
-					if(a[i*n+j]>a[i*n+k]+a[k*n+j])
-					{
+					if(a[i*n+j]>a[i*n+k]+a[k*n+j]){
 						a[i*n+j]=a[i*n+k]+a[k*n+j];
 						order.a[i*n+j]=k;
 					}
 	}
-	Matrix& operator =(const Matrix &m)
-	{
-		if(this!=(&m))
-		{
+	// Sobrecarga de =
+	Matrix& operator =(const Matrix &m){
+		if(this!=(&m)){
 			init(m.n);
 			for(int i=0;i<n;i++)
 				for(int j=0;j<n;j++)
@@ -412,61 +405,57 @@ struct Matrix//Distance Matrix
 	}
 	int* operator[](int x){return a+x*n;}
 };
-struct Node
-{
+
+// ***************************** ESTRUCTURA NODO *********************************************
+struct Node{
 	Node(){clear();}
-	int part;//number of son nodes
-	int n,father,deep;//n: the number of subgraph, the id of father node,son[2]left son and right son,deep: current deepth
+	int part; // Número de nodos hijos
+	int n,father,deep;//n: el número del subgrafo, el id del nodo padre,son[2]hijo izquierdo e hijo derecho,deep: profundidad actual
 	vector<int>son;
-	Graph G;//subgraph
-	vector<int>color;//which subgraph the node belongs to
-	Matrix dist,order;//border distance matrix ,border pass route with floyd k,order=(-1:connected directly)|(-2:connected in parents)|(-3:connected in son nodes)|(-INF:none)
-	map<int,pair<int,int> >borders;//first:real id of border ;second:<number of border in borders, corresponding nodes(0~n-1)>
+	Graph G;// Subgrafo
+	vector<int>color; // A qué subgrafo pertenece el nodo
+	Matrix dist,order; // Matriz de distancia de frontera ,ruta de paso de frontera con floyd k,orden=(-1:conectado directamente)|(-2:conectado en padres)|(-3:conectado en nodos hijos)|(-INF:ninguno)
+	map<int,pair<int,int> >borders; // primero:id real del borde ;segundo:<número de borde en bordes, nodos correspondientes(0~n-1)>
 	vector<int>border_in_father,border_in_son,border_id,border_id_innode;//
-	//the number of borders in father node and son node, raw id in graph G, number of border in sub node
-	vector<int>path_record;//temp record for route
-	int cache_vertex_id,cache_bound;// the start id stored in cache, the updated bound in cache(bound had updated end)
+	// Número de bordes en el nodo padre y en el nodo hijo, id bruto en el grafo G, número de bordes en el subnodo
+	vector<int>path_record; //Registro temporal de la ruta
+	int cache_vertex_id,cache_bound;// El id de inicio almacenado en caché, el límite actualizado en caché(bound had updated end)
 	vector<int>cache_dist;
-	//cache_dist stores the distance from cache_id to all the borders, only be correct when it small or equal to cache_bound
-	vector<int>border_son_id;//the number of son node which border belongs to   
-	int min_border_dist;//min cached distance of current border in the cache (for KNN cut)
-	vector<pair<int,int> >min_car_dist;//the nearest car and the node_id to the border <car_dist,node_id> 
-	friend ostream& operator<<(ostream &out,const Node &N)
-	{
+	//cache_dist almacena la distancia desde cache_id a todos los bordes, sólo será correcta cuando sea menor o igual que cache_bound
+	vector<int>border_son_id; // El número del nodo hijo al que pertenece la frontera   
+	int min_border_dist; // distancia en caché de la frontera actual en la caché (para corte KNN)
+	vector<pair<int,int> >min_car_dist; // El coche más cercano y el node_id a la frontera <car_dist,node_id>
+
+	// Salidad del Nodo
+	friend ostream& operator<<(ostream &out,const Node &N){
 		out<<N.n<<' '<<N.father<<' '<<N.part<<' '<<N.deep<<' '<<N.cache_vertex_id<<' '<<N.cache_bound<<' '<<N.min_border_dist<<' ';
 		for(int i=0;i<N.part;i++)out<<N.son[i]<<' ';
-		if(INDEX_Optimization)
-		{
+		if(INDEX_Optimization){
     		out<<N.color<<' '<<N.dist<<' '<<N.borders<<' ';
     		if(Save_Order_Matrix)out<<N.order<<' ';
     	}
-		else
-		{
+		else{
     		out<<N.color<<' '<<N.dist<<' '<<N.borders<<' '<<N.border_in_father<<' '<<N.border_in_son<<' '<<N.border_id<<' '<<N.border_id_innode<<' '<<N.path_record<<' '<<N.cache_dist<<' '<<N.min_car_dist<<' '<<N.border_son_id<<' ';
     	    if(Save_Order_Matrix)out<<N.order<<' ';
     	}
 		return out;		
 	}
-	friend istream& operator>>(istream &in,Node &N)
-	{
+	friend istream& operator>>(istream &in,Node &N){
 		in>>N.n>>N.father>>N.part>>N.deep>>N.cache_vertex_id>>N.cache_bound>>N.min_border_dist;
 		N.son.clear();
 		N.son=vector<int>(N.part);
 		for(int i=0;i<N.part;i++)in>>N.son[i];
-		if(INDEX_Optimization)
-		{
+		if(INDEX_Optimization){
     		in>>N.color>>N.dist>>N.borders;
     		if(Save_Order_Matrix)in>>N.order;
     	}
-		else
-		{
+		else{
 		    in>>N.color>>N.dist>>N.borders>>N.border_in_father>>N.border_in_son>>N.border_id>>N.border_id_innode>>N.path_record>>N.cache_dist>>N.min_car_dist>>N.border_son_id;
     		if(Save_Order_Matrix)in>>N.order;
 		}
 		return in;		
 	}
-	void save_binary(ostream &out)
-	{
+	void save_binary(ostream &out){
 		save(out,n);
 		save(out,father);
 		save(out,part);
@@ -475,15 +464,13 @@ struct Node
 		save(out,cache_bound);
 		save(out,min_border_dist);
 		for(int i=0;i<part;i++)save(out,son[i]);
-		if(INDEX_Optimization)
-		{
+		if(INDEX_Optimization){
 			save(out,color);
 			dist.save_binary(out);
 			if(Save_Order_Matrix)order.save_binary(out);
 			save(out,borders);
 		}
-		else
-		{
+		else{
 			save(out,color);
 			dist.save_binary(out);
 			if(Save_Order_Matrix)order.save_binary(out);
@@ -511,15 +498,13 @@ struct Node
 		son=vector<int>(part);
 		for(int i=0;i<part;i++)read(in,son[i]);
 		//printf("read_binary Node n=%d father=%d part=%d deep=%d\n",n,father,part,deep);
-		if(INDEX_Optimization)
-		{
+		if(INDEX_Optimization){
 			read(in,color);
 			dist.read_binary(in);
 			if(Save_Order_Matrix)order.read_binary(in);
 			read(in,borders);
 		}
-		else
-		{
+		else{
 			read(in,color);
 			dist.read_binary(in);
 			if(Save_Order_Matrix)order.read_binary(in);
@@ -534,14 +519,12 @@ struct Node
 			read(in,border_son_id);
 		}
 	}
-	void init(int n)
-	{
+	void init(int n){
 		part=n;
 		son=vector<int>(n);
 		for(int i=0;i<n;i++)son[i]=0;
 	}
-	void clear()
-	{
+	void clear(){
 		part=n=father=deep=0;
 		son.clear();
 		dist.clear();
@@ -560,21 +543,17 @@ struct Node
 		border_son_id.clear();
 		min_car_dist.clear();
 	}
-	void make_border_edge()//update the direct connected edge of border to dist(build_dist1)
-	{
+	void make_border_edge(){ // Actualiza la arista directamente conectada del borde a dist(build_dist1)
 		int i,j;
 		map<int,pair<int,int> >::iterator iter;
-		for(iter=borders.begin();iter!=borders.end();iter++)
-		{
+		for(iter=borders.begin();iter!=borders.end();iter++){
 			i=iter->second.second;
 			for(j=G.head[i];j;j=G.next[j])
-				if(color[i]!=color[G.list[j]])
-				{
+				if(color[i]!=color[G.list[j]]){
 					int id1,id2;
 					id1=iter->second.first;
 					id2=borders[G.id[G.list[j]]].first;
-					if(dist[id1][id2]>G.cost[j])
-					{
+					if(dist[id1][id2]>G.cost[j]){
 						dist[id1][id2]=G.cost[j];
 						order[id1][id2]=-1;
 					}
@@ -582,26 +561,29 @@ struct Node
 		}
 	}
 };
-struct G_Tree
-{
-	int root;
-	vector<int>id_in_node;			//which node the vertex belongs to
-	vector<vector<int> >car_in_node;//Record the vehicles in the vertex.
-    vector<int>car_offset; 			//The offset of the vehicle in the vertex.
 
-	struct Interface
-	{
-		//int cnt1,cnt2;
-		G_Tree *tree;//point to the G_Tree(var)
-		int tot,size,id_tot;//tot: up bound of vir subscript, size:size of vector,id_tot up bound of memory 
-		int node_size;//size of vector node
+// *********************************************
+// ESTRUCTURA G_Tree
+// *********************************************
+struct G_Tree{
+	int root;
+	vector<int>id_in_node;			//a que nodo pertenece el vértice
+	vector<vector<int> >car_in_node;//Registra los vehículos en el vértice.
+    vector<int>car_offset; 			//El desplazamiento del vehículo en el vértice.
+
+	struct Interface{
+		G_Tree *tree;               //Puntero al G_Tree(var)
+		int tot,size,id_tot;        //tot: límite superior del subíndice vir, tamaño: tamaño del vector, id_tot límite superior de la memoria
+		int node_size;              //tamaño del nodo vector
 		Node *node;
-		vector<int>id;//id of node in vector id 
-		//sub node information 
-		vector<int>father;//father node of vir node
-		vector<int>border_in_father;//vir node border_in_father
-		vector<int>G_id;//real id of the leaf which n=1 in node[0]
-		void build_node0(int x)//init node[0] with x
+		vector<int>id;              //id del nodo en el vector id
+		//sub node informacion
+		vector<int>father;          //nodo padre del nodo vir
+		vector<int>border_in_father;//nodo vir border_in_father
+		vector<int>G_id;            //real id de la hoja con n=1 in node[0]
+
+        //Incializar node[0] con x
+        void build_node0(int x)
 		{
 			//cnt2++;
 			node[0].borders.clear();
@@ -619,9 +601,8 @@ struct G_Tree
 			}
 
 		}
-		Node& operator[](int x)
-		{
-			//cnt1++;
+
+		Node& operator[](int x){
 			if(id[x]==0 && Memory_Optimization)
 				build_node0(x);
 			return node[id[x]];
@@ -733,8 +714,9 @@ struct G_Tree
 			build_border_in_father_son();
 		}
 	}
-	void add_border(int x,int id,int id2)
-	// add a real id to the boundary set of x, in vir is id2, its corresponding id of border
+
+    // agrega un id real al conjunto de límites de x, en vir es id2, su correspondiente id de borde
+    void add_border(int x,int id,int id2)
 	{
 		map<int,pair<int,int> >::iterator iter;
 		iter=node[x].borders.find(id);
@@ -744,6 +726,8 @@ struct G_Tree
 			node[x].borders[id]=second;
 		}
 	}
+
+    //calcular el conjunto de x
 	void make_border(int x,const vector<int> &color)//calculate the set of x
 	{
 		for(int i=0;i<node[x].G.n;i++)
@@ -757,9 +741,11 @@ struct G_Tree
 				}
 		}
 	}
-	void build(int x=1,int f=1,const Graph &g=G)//Build tree，current x,number of subgraphs f,current subgraph g
+
+    // Construir árbol, x actual, número de subgráfos f, subgráfo actual g
+	void build(int x=1,int f=1,const Graph &g=G)
 	{
-		if(x==1)//x root 
+		if(x==1)//x es raiz 
 		{
 			node.tree=this;
 			node.size=G.n*2+2;
@@ -774,7 +760,7 @@ struct G_Tree
 			node[1].G=g;
 			node.node_size=node.size;
 		}
-		else//x not root
+		else//x no es raiz
 		{
 			node[x].deep=node[node[x].father].deep+1;
 		}
@@ -784,7 +770,7 @@ struct G_Tree
 		if(node[x].n>50)printf("x=%d deep=%d n=%d ",x,node[x].deep,node[x].G.n);
 		if(node[x].n>f)
 		{
-			//id of sub node
+			//id del subnodo
 			int top=node.tot;
 			for(int i=0;i<node[x].part;i++)
 			{
@@ -792,7 +778,7 @@ struct G_Tree
 				node[top+i].father=x;
 			}
 			node.tot+=node[x].part;
-			//add border between two graph
+			//añadir borde entre dos grafos
 			Graph **graph;
 			graph=new Graph*[node[x].part];
 			for(int i=0;i<node[x].part;i++)graph[i]=&node[node[x].son[i]].G;
@@ -800,7 +786,7 @@ struct G_Tree
 			delete [] graph;
 			make_border(x,node[x].color);
 			if(node[x].n>50)printf("border=%d\n",node[x].borders.size());
-			//give the value of border to subgraph 
+			//dar el valor de borde al subgrafo 
 			map<int,pair<int,int> >::iterator iter;
 			for(iter=node[x].borders.begin();iter!=node[x].borders.end();iter++)
 			{
@@ -818,7 +804,7 @@ struct G_Tree
 				}
 				tot[node[x].color[i]]++;
 			}
-			//iterate subnode
+			//iterar subnode
 			for(int i=0;i<node[x].part;i++)
 				build(node[x].son[i]);
 		}
@@ -826,7 +812,7 @@ struct G_Tree
 		node[x].dist.init(node[x].borders.size());
 		node[x].order.init(node[x].borders.size());
 		node[x].order.cover(-INF);
-		if(x==1)//construct dist by root of x
+		if(x==1)//construir dist por raíz de x
 		{
 			for(int i=1;i<min(1000,node.tot-1);i++)
 				if(node[i].n>50)
@@ -839,14 +825,14 @@ struct G_Tree
 			build_dist1(root);
 			printf("begin_build_dist2\n");
 			build_dist2(root);
-			//calculate the leaf node id of vertex in 
+			//calcular el id del nodo hoja del vértice en 
 			id_in_node.clear();
 			for(int i=0;i<node[root].G.n;i++)id_in_node.push_back(-1);
 			for(int i=1;i<node.tot;i++)
 				if(node[i].G.n==1)
 					id_in_node[node[i].G.id[0]]=i;
 			{
-				//建立car_in_node;
+				//car_in_node;
 				vector<int>empty_vector;
 				empty_vector.clear();
 				car_in_node.clear();
@@ -855,32 +841,34 @@ struct G_Tree
 			if(Memory_Optimization)Memory_Compress();
 		}
 	}
-	void build_dist1(int x=1)// from down to top merge dist in Graph
+
+    // de abajo hacia arriba fusionar dist en Graph
+    void build_dist1(int x=1)
 	{
-		// Calculate dist in subgraph and set to x
+		// Calcular dist en subgrafo y poner a x
 		for(int i=0;i<node[x].part;i++)if(node[x].son[i])build_dist1(node[x].son[i]);
 		if(node[x].son[0])//not leaf
 		{
-			//construct the edge between x subnode
+			//construir la arista entre x subnodo
 			node[x].make_border_edge();
-			// construct the real dist inside
+			// construir la dist real en el interior
 			node[x].dist.floyd(node[x].order);
 		}
-		else ;//leaf
-		// give the inside weight to father
+		else ;//hoja
+		// dar el peso interior al padre
 		if(node[x].father)
 		{
 			int y=node[x].father,i,j;
 			map<int,pair<int,int> >::iterator x_iter1,y_iter1;
 			vector<int>id_in_fa(node[x].borders.size());
-			//calculate the id of border in father border,  no exist:-1
+			//calcular el id de borde en padre borde, no existe:-1
 			for(x_iter1=node[x].borders.begin();x_iter1!=node[x].borders.end();x_iter1++)
 			{
 				y_iter1=node[y].borders.find(x_iter1->first);
 				if(y_iter1==node[y].borders.end())id_in_fa[x_iter1->second.first]=-1;
 				else id_in_fa[x_iter1->second.first]=y_iter1->second.first;
 			}
-			//tell the all connection weight to father
+			//dice el peso de todas las conexiones al padre
 			for(i=0;i<(int)node[x].borders.size();i++)
 				for(j=0;j<(int)node[x].borders.size();j++)
 					if(id_in_fa[i]!=-1&&id_in_fa[j]!=-1)
@@ -895,12 +883,14 @@ struct G_Tree
 		}
 		return;
 	}
-	void build_dist2(int x=1)//Calculate from top to down as in paper
+
+    //Calcular de arriba hacia abajo como en paper
+	void build_dist2(int x=1)
 	{
 		if(x!=root)node[x].dist.floyd(node[x].order);
 		if(node[x].son[0])
 		{
-			//calculate the border id in subgraph of current border 
+			//calcular el id del borde en el subgrafo del borde actual 
 			vector<int>id_(node[x].borders.size());
 			vector<int>color_(node[x].borders.size());
 			map<int,pair<int,int> >::iterator iter1,iter2;
@@ -911,7 +901,7 @@ struct G_Tree
 				int y=node[x].son[c];
 				id_[iter1->second.first]=node[y].borders[iter1->first].first;
 			}
-			//Recalculate the subgraph weight 
+			//Recalcular el peso del subgrafo 
 			for(int i=0;i<(int)node[x].borders.size();i++)
 				for(int j=0;j<(int)node[x].borders.size();j++)
 					if(color_[i]==color_[j])
@@ -924,16 +914,17 @@ struct G_Tree
 							node[y].order[id_[i]][id_[j]]=-2;
 						}
 					}
-			// Recursive sub nodes 
+			// Subnodos recursivos 
 			for(int i=0;i<node[x].part;i++)
 				if(node[x].son[i])build_dist2(node[x].son[i]);
 		}
 	}
-	void build_border_in_father_son()
-	//calculate the id of border in father/son 
+
+    //calcular el id del borde en padre/hijo
+    void build_border_in_father_son()
 	{
 		int i,j,x,y;
-		//Construct cache
+		//Construir cache
 		for(x=1;x<node.tot;x++)
 		{
 			//printf("x=%d node.id[x]=%d size=%d\n",x,node.id[x],node.node_size);fflush(stdout);
@@ -991,7 +982,9 @@ struct G_Tree
 			}
 		}
 	}
-	void Memory_Compress()//Compress the tree in memory make the node with n=1 visual
+
+    //Comprimir el árbol en memoria hacer el nodo con n=1 visual
+	void Memory_Compress()
 	{
 		printf("Begin Memory Compress! node_size=%d\n",node.node_size);
 		int cnt=0;
@@ -1021,9 +1014,10 @@ struct G_Tree
 		node.node=new_node;
 		printf("End Memory Compress! node_size=%d\n",node.node_size);fflush(stdout);
 	}
+
+    //coloque la distancia más corta de S a x en dist1, luego calcule la distancia de S a x.padre y actualice dist
+    //tipo = 0 está arriba, tipo = 1 está abajo
 	void push_borders_up(int x,vector<int> &dist1,int type)
-	//put the shortest distance from S to x in dist1, then calculate the distance from S to x.father and update dist
-	//type = 0 is up, type = 1 is down 
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1053,7 +1047,8 @@ struct G_Tree
 					dist2[j_]=dist2[i_]+dist[i_][j_];
 				}
 			}
-		}else{
+		}
+		else{
 			for(int i=0;i<tot0;i++)
 			{
 				int i_=begin[i];
@@ -1069,8 +1064,9 @@ struct G_Tree
 		delete [] begin;
 		delete [] end;
 	}
-	void push_borders_up_cache(int x,int bound=INF)
-	//cache S to vertex in x.cache_dist, and calculate the distance from S to x.father, and update x.father.cache
+
+    //cachear S al vértice en x.cache_dist, y calcular la distancia de S a x.father, y actualizar x.father.cache
+    void push_borders_up_cache(int x,int bound=INF)
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1114,8 +1110,9 @@ struct G_Tree
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
+
+    //calcular la distancia de S al hijo de x, actualizar y.cache por S a los bordes en x.cache_dist
 	void push_borders_down_cache(int x,int y,int bound=INF)
-	//calculate distance from S to the son of x, update y.cache by S to borders in x.cache_dist
 	{
 		if(node[x].cache_vertex_id==node[y].cache_vertex_id&&bound<=node[y].cache_bound)return;
 		node[y].cache_vertex_id=node[x].cache_vertex_id;
@@ -1156,8 +1153,9 @@ struct G_Tree
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
-	void push_borders_brother_cache(int x,int y,int bound=INF)
-	//from S to vertex x stored in x.cache_dist,calculate the distance from S to brother vertex y and update y.cache
+
+    //desde S hasta el vértice x almacenado en x.cache_dist, calcule la distancia desde S hasta el vértice hermano y y actualice y.cache
+    void push_borders_brother_cache(int x,int y,int bound=INF)
 	{
 		int S=node[x].cache_vertex_id,LCA=node[x].father,i,j;
 		if(node[y].cache_vertex_id==S&&node[y].cache_bound>=bound)return;
@@ -1172,16 +1170,14 @@ struct G_Tree
 			else p=y;
 			for(i=j=0;i<(int)node[p].borders.size();i++)
 				if(node[p].border_in_father[i]!=-1)
-					if((t==1)||(t==0&&node[p].cache_dist[i]<bound))
-					{
+					if((t==1)||(t==0&&node[p].cache_dist[i]<bound)){
 						id_LCA[t].push_back(node[p].border_in_father[i]);
 						id_now[t].push_back(i);
 					}
 		}
 		for(int i=0;i<node[y].cache_dist.size();i++)node[y].cache_dist[i]=INF;
 		for(int i=0;i<id_LCA[0].size();i++)
-			for(int j=0;j<id_LCA[1].size();j++)
-			{
+			for(int j=0;j<id_LCA[1].size();j++){
 				int k=node[x].cache_dist[id_now[0][i]]+node[LCA].dist[id_LCA[0][i]][id_LCA[1][j]];
 				if(k<node[y].cache_dist[id_now[1][j]])node[y].cache_dist[id_now[1][j]]=k;
 			}
@@ -1190,17 +1186,14 @@ struct G_Tree
 		begin=new int[node[y].borders.size()];
 		end=new int[node[y].borders.size()];
 		int tot0=0,tot1=0;
-		for(int i=0;i<node[y].cache_dist.size();i++)
-		{
+		for(int i=0;i<node[y].cache_dist.size();i++){
 			if(node[y].cache_dist[i]<bound)begin[tot0++]=i;
 			else if(node[y].cache_dist[i]==INF)
 				end[tot1++]=i;
 		}
-		for(int i=0;i<tot0;i++)
-		{
+		for(int i=0;i<tot0;i++){
 			int i_=begin[i];
-			for(int j=0;j<tot1;j++)
-			{
+			for(int j=0;j<tot1;j++){
 				if(node[y].cache_dist[end[j]]>node[y].cache_dist[i_]+dist[i_][end[j]])
 				node[y].cache_dist[end[j]]=node[y].cache_dist[i_]+dist[i_][end[j]];
 			}
@@ -1212,10 +1205,11 @@ struct G_Tree
 			if(node[y].border_in_father[i]!=-1)
 				node[y].min_border_dist=min(node[y].min_border_dist,node[y].cache_dist[i]);
 	}
-	void push_borders_up_path(int x,vector<int> &dist1)
-	//Cache S to border of x in dist1
-	//calculate the distance from s to x.father, update dist1
-	//record x.father to x.father.path_record(>=0 means node, < 0 means where come, -INF non pre)
+
+    // Cache S al borde de x en dist1
+    //calcular la distancia de s a x.padre, actualizar dist1
+    //grabar x.padre a x.padre.path_record(>=0 significa nodo, <0 significa de dónde viene, -INF no pre)
+    void push_borders_up_path(int x,vector<int> &dist1)
 	{
 		if(node[x].father==0)return;
 		int y=node[x].father;
@@ -1256,15 +1250,18 @@ struct G_Tree
 		delete [] begin;
 		delete [] end;
 	}
-	int find_LCA(int x,int y)//LCA of x and y 
+
+    //LCA de x y y
+    int find_LCA(int x,int y)
 	{
 		if(node[x].deep<node[y].deep)swap(x,y);
 		while(node[x].deep>node[y].deep)x=node[x].father;
 		while(x!=y){x=node[x].father;y=node[y].father;}
 		return x;
 	}
-	int search(int S,int T)//Shortest distance from S to T
-	{
+
+    //La distancia más corta de S a T
+	int search(int S,int T){
 		if(S==T)return 0;
 		//Calculate LCA
 		int i,j,k,p;
@@ -1290,7 +1287,7 @@ struct G_Tree
 			if(t==0)x=p;
 			else y=p;
 		}
-		vector<int>id[2];//current border id in sequence of LCA border vector 
+		vector<int>id[2];//id de frontera actual en la secuencia del vector de frontera LCA 
 		for(int t=0;t<2;t++)
 		{
 			if(t==0)p=x;
@@ -1304,7 +1301,7 @@ struct G_Tree
 				}
 			while(dist[t].size()>id[t].size()){dist[t].pop_back();}
 		}
-		//matched
+		//matched - emparejado
 		int MIN=INF;
 		for(i=0;i<dist[0].size();i++)
 		{
@@ -1317,10 +1314,11 @@ struct G_Tree
 		}
 		return MIN;
 	}
-	int search_cache(int S,int T,int bound=INF)
-	//Search Shortest distance from S to T, and store them in cache, skip weight >=bound, if no return INF
+
+    //Buscar la distancia más corta de S a T, y almacenarlos en caché, omitir peso> = límite, si no, devolver INF
+    int search_cache(int S,int T,int bound=INF)
 	{
-		//Naive calculate and cache
+		//Calculo ingenuo y cache
 		if(S==T)return 0;
 		//LCA
 		int i,j,k,p;
@@ -1367,7 +1365,9 @@ struct G_Tree
 		//Final Result
 		return node[id_in_node[T]].cache_dist[0];
 	}
-	void add_car(int node_id,int car_id)//add a car_id car which belongs to  node_id to car set.
+
+    //* Agregar un auto car_id que pertenezca a node_id al conjunto de autos.
+	void add_car(int node_id,int car_id)
 	{
 		car_in_node[node_id].push_back(car_id);
 		if(car_in_node[node_id].size()==1)
@@ -1378,7 +1378,9 @@ struct G_Tree
 			for(int p=S;push_borders_up_add_min_car_dist(p,node_id);p=node[p].father);  //add it to some node
 		}
 	}
-	void del_car(int node_id,int car_id)//remove a car_id car which belongs to node_id from car set
+
+    //* Eliminar un coche car_id que pertenece a node_id del conjunto de coches
+    void del_car(int node_id,int car_id)
 	{
 		int i;
 		for(i=0;i<car_in_node[node_id].size();i++)
@@ -1401,22 +1403,29 @@ struct G_Tree
 		}
         //
 	}
-	void change_car_offset(int car_id,int dist)// update the offset of car_id to the vertex
+
+	//* Actualizar el desplazamiento de car_id al vértice
+    void change_car_offset(int car_id,int dist)
 	{
 		while(car_offset.size()<=car_id)car_offset.push_back(0);
 		car_offset[car_id]=dist;
 	}
-	int get_car_offset(int car_id)//get the offset of car_id 
+
+    //* Obtener el desplazamiento de car_id
+	int get_car_offset(int car_id)
 	{
 		while(car_offset.size()<=car_id)car_offset.push_back(0);
 		return car_offset[car_id];
 	}
 
-	int begin[10000],end[10000];//push_borders_up_add/del_min_car_dist vector of calculated vertex and un-calculated
+	//push_borders_up_add/del_min_car_dist vector de vértice calculado y no calculado
+    int begin[10000],end[10000];
     int buffer[10000];
+
+
+    //* actualizar x.father por min_car_dist en x, actualice donde node_id=start_id, si no existe, devuelve falso, o verdadero.
     bool push_borders_up_add_min_car_dist(int x,int start_id)
-    //update x.father by min_car_dist in x, update which node_id=start_id, if no exist return false, of return true.
-	{                                                     
+	{
 		// leaf node and the position of the car
 		int re=false;
 		if(node[x].father==0)return re;
@@ -1448,8 +1457,6 @@ struct G_Tree
 			int *dist;
 			int n_=node[y].dist.n;
 
-
-
 			int *nodey_dist_a=node[y].dist.a;
             for (int i = 0; i < tot0; i++) {
                 dist = begin[i] * n_ + nodey_dist_a;
@@ -1466,7 +1473,9 @@ struct G_Tree
 		}
 		return re;
 	}
-	bool push_borders_up_del_min_car_dist(int x,int start_id)//del  min_car_dist which node_id=start_id from, then update. no exist return false, otherwise return true 
+
+    //* del min_car_dist desde el cual node_id=start_id, luego actualice. no existe devuelve falso, de lo contrario devuelve verdadero
+    bool push_borders_up_del_min_car_dist(int x,int start_id)
 	{
 		if(node[x].father==0)return false; //till top 
 		bool re=false;
@@ -1557,8 +1566,9 @@ struct G_Tree
 		}
 		return re;
 	}
-	int push_borders_up_cache_KNN_min_dist_car(int x)
-	//calculate S to x.father and cache
+
+    //Calcular S a x.padre y caché
+    int push_borders_up_cache_KNN_min_dist_car(int x)
     {
       //DP
       if (node[x].father == 0) return INF;
@@ -1604,7 +1614,8 @@ struct G_Tree
       return re;
     }
 
-	vector<int> KNN_min_dist_car(int S,int K)//Most import one, calculate the KNN of S, return the set of result
+    //La mayoría importa uno, calcula el KNN de S, devuelve el conjunto de resultados
+	vector<int> KNN_min_dist_car(int S,int K)
 	{
 		//optimization as in paper, only need to calculate some layer, only K is farther than current or non car in current layer.
 		int Now_Cache_Node_Number=id_in_node[S],Now_Cache_Dist=0;
@@ -1721,10 +1732,13 @@ struct G_Tree
 		return ans;
 	}
 }tree;
-void init()
-{
+
+// Inciaizar usando una semilla
+void init(){
 	srand(747929791);
 }
+
+// Leer archivo con los datos de vertices , aristas y pesos
 void read()
 {
 	printf("begin read\n");
@@ -1753,6 +1767,8 @@ void read()
 	cout<<"correct4"<<endl;
 	fclose(in);
 }
+
+// Guardar en un archivo tras la construccion
 void save(string file_name)
 {
 	printf("begin save\n");
@@ -1762,6 +1778,8 @@ void save(string file_name)
 	out.close();
 	printf("save_over\n");
 }
+
+// Guardar en un archivo binario
 void save_binary(string file_name)
 {
 	printf("begin save_binary\n");
@@ -1771,12 +1789,16 @@ void save_binary(string file_name)
 	out.close();
 	printf("save_binary_over\n");
 }
+
+// Carga de archivo normal
 void load(string file_name)
 {
 	ifstream in(file_name.c_str());
 	in>>G.n;
 	in>>tree;
 }
+
+// Carga de archivo binario
 void load_binary(string file_name)
 {
 	printf("begin load_binary\n");
@@ -1788,7 +1810,8 @@ void load_binary(string file_name)
 	printf("load_binary_over\n");
 }
 
-bool arg_has_str(char ar[], string query_str) { //some special data NW,US from 0
+//* Algunos datos especiales NW,US desde 0
+bool arg_has_str(char ar[], string query_str) {
     string strtemp = string(ar);
     if (strtemp.find(query_str) == std::string::npos) {
         return false;
@@ -1796,9 +1819,8 @@ bool arg_has_str(char ar[], string query_str) { //some special data NW,US from 0
     return true;
 }
 
-void knn_test(double car_percent, double change_percent, int query_number, int K, int query_time) 
-{
-
+// Funcion para testear consulta knn
+void knn_test(double car_percent, double change_percent, int query_number, int K, int query_time) {
             vector<int> ans;
             vector<int> addr;
             vector<int> query_pos;
@@ -1810,8 +1832,8 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
         printf("KNN Test: car_percent=%lf change_percent=%lf K=%d\n",car_percent,change_percent,K);
         printf("Total Vertice Number is %d\n",G.n);
         printf("Total Car Number is %d\n",car_num);
-        printf("Change number of vehicles per query: %d\n",change_num);
-        printf("Query number in between two updates: %d\n",query_number);
+        printf("Change number of vehicles per query: %d\n",query_number);
+        printf("Query number after each update: %d\n",change_num);
         printf("Every test repeat %d times.\n",query_time);
         
             for (int i = 0; i < car_num; i++) {      //generate position of car
@@ -1837,6 +1859,7 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
             TIME_TICK_PRINT("ONE time knn",query_time);
 
 
+                //mutiple test
             long long total_up_time  = 0;
             long long total_query_time  = 0;
             long long sin_up_time  = 0;
@@ -1857,6 +1880,8 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
 
 		   		sin_up_time = te - ts;
 		   		total_up_time += sin_up_time ;
+		   		//printf("%lld sing_uptime %lld total_up_time", sin_up_time, total_up_time);
+		   		//TIME_TICK_PRINT("updating cost",query_time);
 
 		   		TIME_TICK_START();
 	            for (int i = 0; i < query_number; i++) {
@@ -1875,6 +1900,10 @@ void knn_test(double car_percent, double change_percent, int query_number, int K
             //TIME_TICK_PRINT("Mutiple Time knn",query_time);
 }
 
+
+// *********************************************
+// * MAIN
+// *********************************************
 int main(int argc, char *argv[])
 {
     	string loadfile;
